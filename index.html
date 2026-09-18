@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Порівняння двох текстів із виведенням розбіжностей." />
+  <meta name="theme-color" content="#08131d" />
+  <title>ZPM — Порівняння текстів</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <article class="compare">
+    <div class="compare__hero">
+      <div>
+        <p class="compare__eyebrow">ZPM</p>
+        <h1 class="compare__title">Порівняння текстів</h1>
+        <p class="compare__subtitle">Вставте два тексти та натисніть «Порівняти» — розбіжності з'являться згори.</p>
+      </div>
+      <label class="compare__theme-toggle" for="themeToggle">
+        <input type="checkbox" id="themeToggle" />
+        <span>Світла тема</span>
+      </label>
+    </div>
+
+    <div class="compare__panel">
+      <div class="compare__meta">
+        <div class="compare__meta-field">
+          <label class="compare__field-label" for="compareDate">Дата</label>
+          <input type="date" id="compareDate" class="compare__date-input" />
+        </div>
+        <div class="compare__meta-field">
+          <label class="compare__field-label" for="compareHistory">Історія порівнянь</label>
+          <select id="compareHistory" class="compare__history-select">
+            <option value="">— Обрати збережене —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="compare__result" id="diffResult">
+        <h2 class="compare__result-title">Розбіжності</h2>
+        <p class="compare__result-placeholder" id="diffPlaceholder">Тут з'являться розбіжності після порівняння.</p>
+        <ul class="compare__result-list" id="diffList" hidden></ul>
+        <div class="compare__result-actions">
+          <button class="compare__button" type="button" id="generateButton" hidden>Згенерувати правильний список</button>
+        </div>
+      </div>
+
+      <div class="compare__wrapper" id="compareWrapper">
+        <div class="compare__input-card" id="cardA">
+          <label class="compare__field-label" for="textInputA">Текст 1</label>
+          <textarea class="compare__textarea" id="textInputA" placeholder="Вставте перший текст..."></textarea>
+        </div>
+        <div class="compare__input-card" id="cardB">
+          <label class="compare__field-label" for="textInputB">Текст 2</label>
+          <textarea class="compare__textarea" id="textInputB" placeholder="Вставте другий текст..."></textarea>
+        </div>
+        <div class="compare__input-card" id="cardCorrected" hidden>
+          <div class="compare__corrected-header">
+            <label class="compare__field-label" for="correctedOutput">Виправлений список</label>
+            <div class="compare__corrected-actions">
+              <button class="compare__button compare__button--secondary" type="button" id="editAgainButton">Редагувати тексти</button>
+              <button class="compare__button" type="button" id="copyCorrectedButton">Скопіювати</button>
+            </div>
+          </div>
+          <textarea class="compare__textarea" id="correctedOutput" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="compare__actions">
+        <button class="compare__button" type="button" id="compareButton">Порівняти</button>
+      </div>
+    </div>
+
+    <footer class="compare__footer">
+      created by<a href="mailto:f.chopin.1.3.1810@gmail.com">&nbsp;chopin&nbsp;</a>2026 ©
+    </footer>
+  </article>
+
+  <script src="scripts/theme.js"></script>
+  <script src="scripts/compare.js"></script>
+  <script src="scripts/scripts.js"></script>
+</body>
+
+</html>
