@@ -2,7 +2,8 @@
   const HISTORY_STORAGE_KEY = "zpm-compare-history";
   const HISTORY_LIMIT = 50;
 
-  let currentItems = [];
+  let currentItems = null;
+  let currentTrailingDivider = "";
 
   function escapeHtml(str) {
     return String(str)
@@ -21,11 +22,52 @@
     return cleaned === cleaned.toUpperCase() && cleaned !== cleaned.toLowerCase();
   }
 
-  function splitEntries(text) {
-    return String(text || "")
-      .split(";")
-      .map((chunk) => chunk.replace(/\s+/g, " ").trim())
-      .filter(Boolean);
+  function findMarkerPositions(str) {
+    const re = /(^|\s)(\d+)\s*[.)]\s/g;
+    const positions = [];
+    let m = re.exec(str);
+    while (m !== null) {
+      positions.push(m.index + m[1].length);
+      m = re.exec(str);
+    }
+    return positions;
+  }
+
+  function tokenizeList(str) {
+    const markers = findMarkerPositions(str);
+
+    if (markers.length === 0) {
+      return { segments: [{ type: "record", raw: str }], trailingDivider: "" };
+    }
+
+    const segments = [];
+    const leadingText = str.slice(0, markers[0]).trim();
+    if (leadingText) {
+      segments.push({ type: "divider", text: leadingText });
+    }
+
+    let trailingDivider = "";
+
+    for (let i = 0; i < markers.length; i += 1) {
+      const start = markers[i];
+      const end = i + 1 < markers.length ? markers[i + 1] : str.length;
+      const chunk = str.slice(start, end);
+      const semiIndex = chunk.indexOf(";");
+      const recordRaw = semiIndex === -1 ? chunk : chunk.slice(0, semiIndex);
+      const trailing = semiIndex === -1 ? "" : chunk.slice(semiIndex + 1).trim();
+
+      segments.push({ type: "record", raw: recordRaw });
+
+      if (trailing) {
+        if (i + 1 < markers.length) {
+          segments.push({ type: "divider", text: trailing });
+        } else {
+          trailingDivider = trailing;
+        }
+      }
+    }
+
+    return { segments, trailingDivider };
   }
 
   function stripOrdinal(chunk) {
@@ -57,6 +99,7 @@
         patronymic: "",
         position,
         line: cleaned,
+        precedingDivider: "",
       };
     }
 
@@ -75,11 +118,33 @@
       patronymic,
       position,
       line: buildLine(rank, surname, firstName, patronymic, position),
+      precedingDivider: "",
     };
   }
 
   function parseList(text) {
-    return splitEntries(text).map(parseEntry);
+    const { segments, trailingDivider } = tokenizeList(String(text || ""));
+    const records = [];
+    let pendingDivider = "";
+
+    segments.forEach((seg) => {
+      if (seg.type === "divider") {
+        pendingDivider = pendingDivider ? `${pendingDivider}\n${seg.text}` : seg.text;
+        return;
+      }
+
+      const normalized = seg.raw.replace(/\s+/g, " ").trim();
+      if (!normalized) {
+        return;
+      }
+
+      const record = parseEntry(normalized, records.length);
+      record.precedingDivider = pendingDivider;
+      pendingDivider = "";
+      records.push(record);
+    });
+
+    return { records, trailingDivider };
   }
 
   function groupBySurname(records) {
@@ -96,8 +161,12 @@
   }
 
   function buildComparison(textA, textB) {
-    const groupA = groupBySurname(parseList(textA));
-    const groupB = groupBySurname(parseList(textB));
+    const parsedA = parseList(textA);
+    const parsedB = parseList(textB);
+    const trailingDivider = parsedA.trailingDivider || parsedB.trailingDivider || "";
+
+    const groupA = groupBySurname(parsedA.records);
+    const groupB = groupBySurname(parsedB.records);
 
     const allKeys = [];
     const seen = new Set();
@@ -132,16 +201,19 @@
           a.position === b.position;
         uid += 1;
 
+        const precedingDivider = a.precedingDivider || b.precedingDivider || "";
+
         if (same) {
-          items.push({ id: `item-${uid}`, type: "match", surname: a.surname, line: a.line });
+          items.push({ id: `item-${uid}`, type: "match", surname: a.surname, line: a.line, precedingDivider });
         } else {
           items.push({
             id: `item-${uid}`,
             type: "conflict",
             surname: a.surname || b.surname,
-            lineA: a.line,
-            lineB: b.line,
+            a,
+            b,
             resolved: a.line,
+            precedingDivider,
           });
         }
       }
@@ -154,6 +226,7 @@
           surname: listA[i].surname,
           line: listA[i].line,
           included: true,
+          precedingDivider: listA[i].precedingDivider || "",
         });
       }
 
@@ -165,20 +238,98 @@
           surname: listB[i].surname,
           line: listB[i].line,
           included: true,
+          precedingDivider: listB[i].precedingDivider || "",
         });
       }
     });
 
-    return items;
+    return { items, trailingDivider };
+  }
+
+  function tokenizeForDiff(str) {
+    return str.split(/(\s+)/).filter((token) => token.length > 0);
+  }
+
+  function computeWordDiff(a, b) {
+    const tokensA = tokenizeForDiff(a);
+    const tokensB = tokenizeForDiff(b);
+    const n = tokensA.length;
+    const m = tokensB.length;
+    const dp = [];
+    for (let i = 0; i <= n; i += 1) {
+      dp.push(new Array(m + 1).fill(0));
+    }
+    for (let i = n - 1; i >= 0; i -= 1) {
+      for (let j = m - 1; j >= 0; j -= 1) {
+        dp[i][j] = tokensA[i] === tokensB[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+
+    const opsA = [];
+    const opsB = [];
+    let i = 0;
+    let j = 0;
+
+    while (i < n && j < m) {
+      if (tokensA[i] === tokensB[j]) {
+        opsA.push({ text: tokensA[i], changed: false });
+        opsB.push({ text: tokensB[j], changed: false });
+        i += 1;
+        j += 1;
+      } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+        opsA.push({ text: tokensA[i], changed: true });
+        i += 1;
+      } else {
+        opsB.push({ text: tokensB[j], changed: true });
+        j += 1;
+      }
+    }
+    while (i < n) {
+      opsA.push({ text: tokensA[i], changed: true });
+      i += 1;
+    }
+    while (j < m) {
+      opsB.push({ text: tokensB[j], changed: true });
+      j += 1;
+    }
+
+    return { opsA, opsB };
+  }
+
+  function renderDiffOps(ops) {
+    let html = "";
+    let buffer = "";
+    let bufferChanged = null;
+
+    const flush = () => {
+      if (!buffer) {
+        return;
+      }
+      html += bufferChanged ? `<span class="compare__diff-mark">${escapeHtml(buffer)}</span>` : escapeHtml(buffer);
+      buffer = "";
+    };
+
+    ops.forEach((op) => {
+      const changed = /^\s+$/.test(op.text) ? false : op.changed;
+      if (changed !== bufferChanged) {
+        flush();
+        bufferChanged = changed;
+      }
+      buffer += op.text;
+    });
+    flush();
+
+    return html;
   }
 
   function renderConflictItem(li, item) {
     li.className = "compare__result-item compare__result-item--changed";
+    const { opsA, opsB } = computeWordDiff(item.a.line, item.b.line);
     li.innerHTML = `
       <span class="compare__conflict-label">Прізвище: ${escapeHtml(item.surname)}</span>
       <div class="compare__conflict-variants">
-        <button type="button" class="compare__variant-btn compare__variant-btn--active" data-variant="A">Текст 1: ${escapeHtml(item.lineA)}</button>
-        <button type="button" class="compare__variant-btn" data-variant="B">Текст 2: ${escapeHtml(item.lineB)}</button>
+        <button type="button" class="compare__variant-btn compare__variant-btn--active" data-variant="A">Текст 1: ${renderDiffOps(opsA)}</button>
+        <button type="button" class="compare__variant-btn" data-variant="B">Текст 2: ${renderDiffOps(opsB)}</button>
       </div>
       <textarea class="compare__inline-input compare__inline-textarea" rows="2">${escapeHtml(item.resolved)}</textarea>
     `;
@@ -190,15 +341,17 @@
       btn.addEventListener("click", () => {
         buttons.forEach((b) => b.classList.remove("compare__variant-btn--active"));
         btn.classList.add("compare__variant-btn--active");
-        const value = btn.dataset.variant === "A" ? item.lineA : item.lineB;
+        const value = btn.dataset.variant === "A" ? item.a.line : item.b.line;
         textarea.value = value;
         item.resolved = value;
+        refreshCorrectedOutput();
       });
     });
 
     textarea.addEventListener("input", () => {
       item.resolved = textarea.value;
       buttons.forEach((b) => b.classList.remove("compare__variant-btn--active"));
+      refreshCorrectedOutput();
     });
   }
 
@@ -218,10 +371,12 @@
     checkbox.addEventListener("change", () => {
       item.included = checkbox.checked;
       input.disabled = !checkbox.checked;
+      refreshCorrectedOutput();
     });
 
     input.addEventListener("input", () => {
       item.line = input.value;
+      refreshCorrectedOutput();
     });
   }
 
@@ -238,16 +393,47 @@
     return li;
   }
 
+  function expandApp() {
+    document.body.classList.add("app-expanded");
+  }
+
+  function scrollToDiffItem(targetId) {
+    const list = document.getElementById("diffList");
+    const target = list.querySelector(`[data-id="${targetId}"]`);
+    if (!target) {
+      return;
+    }
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.add("compare__result-item--flash");
+    setTimeout(() => {
+      target.classList.remove("compare__result-item--flash");
+    }, 1500);
+  }
+
+  function renderSurnameLinks(visibleItems) {
+    const container = document.getElementById("surnameLinks");
+    container.innerHTML = "";
+
+    visibleItems.forEach((item) => {
+      const link = document.createElement("button");
+      link.type = "button";
+      link.className = "compare__surname-link";
+      link.textContent = item.surname || "?";
+      link.addEventListener("click", () => scrollToDiffItem(item.id));
+      container.appendChild(link);
+    });
+  }
+
   function renderDiff(items) {
     currentItems = items;
 
     const list = document.getElementById("diffList");
     const placeholder = document.getElementById("diffPlaceholder");
-    const generateButton = document.getElementById("generateButton");
 
     list.innerHTML = "";
 
     const visibleItems = items.filter((item) => item.type !== "match");
+    renderSurnameLinks(visibleItems);
 
     if (visibleItems.length === 0) {
       placeholder.hidden = false;
@@ -260,22 +446,55 @@
         list.appendChild(renderItem(item));
       });
     }
-
-    generateButton.hidden = items.length === 0;
   }
 
-  function showCorrectedView() {
-    document.getElementById("cardA").hidden = true;
-    document.getElementById("cardB").hidden = true;
-    document.getElementById("cardCorrected").hidden = false;
-    document.getElementById("compareWrapper").classList.add("compare__wrapper--single");
+  function updateCopyButtonState() {
+    const output = document.getElementById("correctedOutput");
+    const button = document.getElementById("copyCorrectedButton");
+    button.disabled = !output.value.trim();
   }
 
-  function showEditView() {
-    document.getElementById("cardA").hidden = false;
-    document.getElementById("cardB").hidden = false;
-    document.getElementById("cardCorrected").hidden = true;
-    document.getElementById("compareWrapper").classList.remove("compare__wrapper--single");
+  function refreshCorrectedOutput() {
+    if (!currentItems) {
+      return;
+    }
+
+    const finalLines = [];
+    let counter = 0;
+
+    currentItems.forEach((item) => {
+      if (item.precedingDivider) {
+        finalLines.push(item.precedingDivider);
+      }
+
+      let value = "";
+      if (item.type === "match") {
+        value = item.line;
+      } else if (item.type === "conflict") {
+        value = (item.resolved || "").trim();
+      } else if (item.type === "added" || item.type === "removed") {
+        if (item.included !== false) {
+          value = (item.line || "").trim();
+        }
+      }
+
+      if (!value) {
+        return;
+      }
+
+      counter += 1;
+      finalLines.push(`${counter}.\t${value};`);
+    });
+
+    if (currentTrailingDivider) {
+      finalLines.push(currentTrailingDivider);
+    }
+
+    const formatted = finalLines.join("\n");
+
+    document.getElementById("correctedOutput").value = formatted;
+    updateCopyButtonState();
+    document.getElementById("correctedCard").hidden = false;
   }
 
   function loadHistory() {
@@ -341,62 +560,48 @@
       return;
     }
 
+    expandApp();
     document.getElementById("compareDate").value = entry.date;
     document.getElementById("textInputA").value = entry.textA;
     document.getElementById("textInputB").value = entry.textB;
 
-    if (entry.corrected) {
-      document.getElementById("correctedOutput").value = entry.corrected;
-      showCorrectedView();
-    } else {
-      showEditView();
-    }
+    const comparison = buildComparison(entry.textA, entry.textB);
+    currentTrailingDivider = comparison.trailingDivider;
+    renderDiff(comparison.items);
+
+    document.getElementById("correctedOutput").value = entry.corrected || "";
+    updateCopyButtonState();
+    document.getElementById("correctedCard").hidden = false;
   }
 
   function handleCompareClick() {
+    expandApp();
     const textA = document.getElementById("textInputA").value;
     const textB = document.getElementById("textInputB").value;
-    renderDiff(buildComparison(textA, textB));
+    const comparison = buildComparison(textA, textB);
+    currentTrailingDivider = comparison.trailingDivider;
+    renderDiff(comparison.items);
+    refreshCorrectedOutput();
   }
 
-  function handleGenerateClick() {
-    const finalLines = [];
+  function handleSaveHistoryClick() {
+    const button = document.getElementById("saveHistoryButton");
+    saveHistoryEntry(document.getElementById("correctedOutput").value);
 
-    currentItems.forEach((item) => {
-      if (item.type === "match") {
-        finalLines.push(item.line);
-      } else if (item.type === "conflict") {
-        const value = (item.resolved || "").trim();
-        if (value) {
-          finalLines.push(value);
-        }
-      } else if (item.type === "added" || item.type === "removed") {
-        if (item.included !== false) {
-          const value = (item.line || "").trim();
-          if (value) {
-            finalLines.push(value);
-          }
-        }
-      }
-    });
-
-    const formatted = finalLines.map((line, idx) => `${idx + 1}.\t${line};`).join("\n");
-
-    document.getElementById("correctedOutput").value = formatted;
-    showCorrectedView();
-    saveHistoryEntry(formatted);
+    const original = button.textContent;
+    button.textContent = "Збережено!";
+    setTimeout(() => {
+      button.textContent = original;
+    }, 1500);
   }
 
   function fallbackCopy(textarea) {
-    textarea.removeAttribute("readonly");
     textarea.select();
     try {
       document.execCommand("copy");
     } catch (err) {
       /* копіювання недоступне в цьому середовищі */
     }
-    textarea.setAttribute("readonly", "readonly");
-    textarea.blur();
   }
 
   function handleCopyClick() {
@@ -434,9 +639,9 @@
     renderHistoryOptions(loadHistory());
 
     document.getElementById("compareButton").addEventListener("click", handleCompareClick);
-    document.getElementById("generateButton").addEventListener("click", handleGenerateClick);
+    document.getElementById("saveHistoryButton").addEventListener("click", handleSaveHistoryClick);
     document.getElementById("copyCorrectedButton").addEventListener("click", handleCopyClick);
-    document.getElementById("editAgainButton").addEventListener("click", showEditView);
+    document.getElementById("correctedOutput").addEventListener("input", updateCopyButtonState);
     document.getElementById("compareHistory").addEventListener("change", handleHistoryChange);
   }
 

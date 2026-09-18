@@ -13,7 +13,7 @@
 <body>
   <article class="compare">
     <div class="compare__hero">
-      <div>
+      <div class="compare__hero-text">
         <p class="compare__eyebrow">ZPM</p>
         <h1 class="compare__title">Порівняння текстів</h1>
         <p class="compare__subtitle">Вставте два тексти та натисніть «Порівняти» — розбіжності з'являться згори.</p>
@@ -39,32 +39,33 @@
       </div>
 
       <div class="compare__result" id="diffResult">
-        <h2 class="compare__result-title">Розбіжності</h2>
+        <div class="compare__result-header">
+          <h2 class="compare__result-title">Розбіжності</h2>
+          <div class="compare__surname-links" id="surnameLinks"></div>
+        </div>
         <p class="compare__result-placeholder" id="diffPlaceholder">Тут з'являться розбіжності після порівняння.</p>
         <ul class="compare__result-list" id="diffList" hidden></ul>
-        <div class="compare__result-actions">
-          <button class="compare__button" type="button" id="generateButton" hidden>Згенерувати правильний список</button>
+      </div>
+
+      <div class="compare__input-card" id="correctedCard" hidden>
+        <div class="compare__corrected-header">
+          <label class="compare__field-label" for="correctedOutput">Виправлений список</label>
+          <div class="compare__corrected-actions">
+            <button class="compare__button" type="button" id="saveHistoryButton">Зберегти в історію</button>
+            <button class="compare__button" type="button" id="copyCorrectedButton" disabled>Скопіювати</button>
+          </div>
         </div>
+        <textarea class="compare__textarea" id="correctedOutput" disabled></textarea>
       </div>
 
       <div class="compare__wrapper" id="compareWrapper">
         <div class="compare__input-card" id="cardA">
-          <label class="compare__field-label" for="textInputA">Текст 1</label>
-          <textarea class="compare__textarea" id="textInputA" placeholder="Вставте перший текст..."></textarea>
+          <label class="compare__field-label" for="textInputA">БР Щоденна</label>
+          <textarea class="compare__textarea" id="textInputA" placeholder="Вставте текст із файлу БР Щоденна..."></textarea>
         </div>
         <div class="compare__input-card" id="cardB">
-          <label class="compare__field-label" for="textInputB">Текст 2</label>
+          <label class="compare__field-label" for="textInputB">Розподіл</label>
           <textarea class="compare__textarea" id="textInputB" placeholder="Вставте другий текст..."></textarea>
-        </div>
-        <div class="compare__input-card" id="cardCorrected" hidden>
-          <div class="compare__corrected-header">
-            <label class="compare__field-label" for="correctedOutput">Виправлений список</label>
-            <div class="compare__corrected-actions">
-              <button class="compare__button compare__button--secondary" type="button" id="editAgainButton">Редагувати тексти</button>
-              <button class="compare__button" type="button" id="copyCorrectedButton">Скопіювати</button>
-            </div>
-          </div>
-          <textarea class="compare__textarea" id="correctedOutput" readonly></textarea>
         </div>
       </div>
 
