@@ -160,6 +160,53 @@
     return { map, order };
   }
 
+  function pairRecordsWithinSurname(listA, listB) {
+    const usedB = new Array(listB.length).fill(false);
+    const pairs = [];
+
+    function takeMatch(a, predicate) {
+      for (let j = 0; j < listB.length; j += 1) {
+        if (!usedB[j] && predicate(listB[j])) {
+          usedB[j] = true;
+          return listB[j];
+        }
+      }
+      return null;
+    }
+
+    const afterExact = [];
+    listA.forEach((a) => {
+      const b = takeMatch(a, (cand) => cand.firstName === a.firstName && cand.patronymic === a.patronymic);
+      if (b) {
+        pairs.push([a, b]);
+      } else {
+        afterExact.push(a);
+      }
+    });
+
+    const afterFirstName = [];
+    afterExact.forEach((a) => {
+      const b = takeMatch(a, (cand) => cand.firstName === a.firstName);
+      if (b) {
+        pairs.push([a, b]);
+      } else {
+        afterFirstName.push(a);
+      }
+    });
+
+    const remainingB = listB.filter((_, j) => !usedB[j]);
+    const positionalCount = Math.min(afterFirstName.length, remainingB.length);
+    for (let i = 0; i < positionalCount; i += 1) {
+      pairs.push([afterFirstName[i], remainingB[i]]);
+    }
+
+    return {
+      pairs,
+      unmatchedA: afterFirstName.slice(positionalCount),
+      unmatchedB: remainingB.slice(positionalCount),
+    };
+  }
+
   function buildComparison(textA, textB) {
     const parsedA = parseList(textA);
     const parsedB = parseList(textB);
@@ -189,11 +236,9 @@
     allKeys.forEach((key) => {
       const listA = groupA.map.get(key) || [];
       const listB = groupB.map.get(key) || [];
-      const pairCount = Math.min(listA.length, listB.length);
+      const { pairs, unmatchedA, unmatchedB } = pairRecordsWithinSurname(listA, listB);
 
-      for (let i = 0; i < pairCount; i += 1) {
-        const a = listA[i];
-        const b = listB[i];
+      pairs.forEach(([a, b]) => {
         const same =
           a.rank === b.rank &&
           a.firstName === b.firstName &&
@@ -216,31 +261,31 @@
             precedingDivider,
           });
         }
-      }
+      });
 
-      for (let i = pairCount; i < listA.length; i += 1) {
+      unmatchedA.forEach((rec) => {
         uid += 1;
         items.push({
           id: `item-${uid}`,
           type: "removed",
-          surname: listA[i].surname,
-          line: listA[i].line,
+          surname: rec.surname,
+          line: rec.line,
           included: true,
-          precedingDivider: listA[i].precedingDivider || "",
+          precedingDivider: rec.precedingDivider || "",
         });
-      }
+      });
 
-      for (let i = pairCount; i < listB.length; i += 1) {
+      unmatchedB.forEach((rec) => {
         uid += 1;
         items.push({
           id: `item-${uid}`,
           type: "added",
-          surname: listB[i].surname,
-          line: listB[i].line,
+          surname: rec.surname,
+          line: rec.line,
           included: true,
-          precedingDivider: listB[i].precedingDivider || "",
+          precedingDivider: rec.precedingDivider || "",
         });
-      }
+      });
     });
 
     return { items, trailingDivider };
