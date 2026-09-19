@@ -25,47 +25,67 @@
     </div>
 
     <div class="compare__panel">
-      <div class="compare__meta">
-        <div class="compare__meta-field">
-          <label class="compare__field-label" for="compareDate">Дата</label>
-          <input type="date" id="compareDate" class="compare__date-input" />
-        </div>
-        <div class="compare__meta-field">
-          <label class="compare__field-label" for="compareHistory">Історія порівнянь</label>
-          <select id="compareHistory" class="compare__history-select">
-            <option value="">— Обрати збережене —</option>
-          </select>
-        </div>
+      <div class="compare__tabs" role="tablist">
+        <button class="compare__tab compare__tab--active" type="button" id="tabButtonFull" data-tab="full" role="tab"
+          aria-selected="true">Повне порівняння</button>
+        <button class="compare__tab" type="button" id="tabButtonSurname" data-tab="surname" role="tab"
+          aria-selected="false">По прізвищу</button>
       </div>
 
-      <div class="compare__result" id="diffResult">
-        <div class="compare__result-header">
-          <h2 class="compare__result-title">Розбіжності</h2>
-          <div class="compare__surname-links" id="surnameLinks"></div>
-        </div>
-        <p class="compare__result-placeholder" id="diffPlaceholder">Тут з'являться розбіжності після порівняння.</p>
-        <ul class="compare__result-list" id="diffList" hidden></ul>
-      </div>
-
-      <div class="compare__input-card" id="correctedCard" hidden>
-        <div class="compare__corrected-header">
-          <label class="compare__field-label" for="correctedOutput">Виправлений список</label>
-          <div class="compare__corrected-actions">
-            <button class="compare__button" type="button" id="saveHistoryButton">Зберегти в історію</button>
-            <button class="compare__button" type="button" id="copyCorrectedButton" disabled>Скопіювати</button>
+      <div class="compare__tab-panel" id="tabPanelFull" role="tabpanel">
+        <div class="compare__meta">
+          <div class="compare__meta-field">
+            <label class="compare__field-label" for="compareDate">Дата</label>
+            <input type="date" id="compareDate" class="compare__date-input" />
+          </div>
+          <div class="compare__meta-field">
+            <label class="compare__field-label" for="compareHistory">Історія порівнянь</label>
+            <select id="compareHistory" class="compare__history-select">
+              <option value="">— Обрати збережене —</option>
+            </select>
           </div>
         </div>
-        <textarea class="compare__textarea" id="correctedOutput" disabled></textarea>
+
+        <div class="compare__result" id="diffResult">
+          <div class="compare__result-header">
+            <h2 class="compare__result-title">Розбіжності</h2>
+            <div class="compare__surname-links" id="surnameLinks"></div>
+          </div>
+          <p class="compare__result-placeholder" id="diffPlaceholder">Тут з'являться розбіжності після порівняння.</p>
+          <ul class="compare__result-list" id="diffList" hidden></ul>
+        </div>
+
+        <div class="compare__input-card" id="correctedCard" hidden>
+          <div class="compare__corrected-header">
+            <label class="compare__field-label" for="correctedOutput">Виправлений список</label>
+            <div class="compare__corrected-actions">
+              <button class="compare__button" type="button" id="saveHistoryButton">Зберегти в історію</button>
+              <button class="compare__button" type="button" id="copyCorrectedButton" disabled>Скопіювати</button>
+            </div>
+          </div>
+          <textarea class="compare__textarea" id="correctedOutput" disabled></textarea>
+        </div>
+      </div>
+
+      <div class="compare__tab-panel" id="tabPanelSurname" role="tabpanel" hidden>
+        <div class="compare__result" id="diffResultSurname">
+          <div class="compare__result-header">
+            <h2 class="compare__result-title">Розбіжності по прізвищах</h2>
+            <div class="compare__surname-links" id="surnameLinksSurname"></div>
+          </div>
+          <p class="compare__result-placeholder" id="diffPlaceholderSurname">Тут з'являться прізвища, яких немає в одній із колонок.</p>
+          <ul class="compare__result-list" id="diffListSurname" hidden></ul>
+        </div>
       </div>
 
       <div class="compare__wrapper" id="compareWrapper">
         <div class="compare__input-card" id="cardA">
-          <label class="compare__field-label" for="textInputB">Розподіл</label>
-          <textarea class="compare__textarea" id="textInputA" placeholder="Вставте текст із файлу БР Щоденна..."></textarea>
+          <label class="compare__field-label" for="textInputA" id="cardALabel">Розподіл</label>
+          <textarea class="compare__textarea" id="textInputA" placeholder="Вставте текст із файлу Розподіл..."></textarea>
         </div>
         <div class="compare__input-card" id="cardB">
-          <label class="compare__field-label" for="textInputA">БР Щоденна</label>
-          <textarea class="compare__textarea" id="textInputB" placeholder="Вставте текст із файлу Розподіл..."></textarea>
+          <label class="compare__field-label" for="textInputB" id="cardBLabel">БР Щоденна</label>
+          <textarea class="compare__textarea" id="textInputB" placeholder="Вставте текст із файлу БР Щоденна..."></textarea>
         </div>
       </div>
 
@@ -81,6 +101,8 @@
 
   <script src="scripts/theme.js"></script>
   <script src="scripts/compare.js"></script>
+  <script src="scripts/compareSurname.js"></script>
+  <script src="scripts/tabs.js"></script>
   <script src="scripts/scripts.js"></script>
 </body>
 

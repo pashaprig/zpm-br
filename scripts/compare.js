@@ -37,7 +37,14 @@
     const markers = findMarkerPositions(str);
 
     if (markers.length === 0) {
-      return { segments: [{ type: "record", raw: str }], trailingDivider: "" };
+      const lines = str.split("\n").map((line) => line.trim()).filter(Boolean);
+      if (lines.length <= 1) {
+        return { segments: [{ type: "record", raw: str }], trailingDivider: "" };
+      }
+      return {
+        segments: lines.map((line) => ({ type: "record", raw: line })),
+        trailingDivider: "",
+      };
     }
 
     const segments = [];
@@ -52,7 +59,8 @@
       const start = markers[i];
       const end = i + 1 < markers.length ? markers[i + 1] : str.length;
       const chunk = str.slice(start, end);
-      const semiIndex = chunk.indexOf(";");
+      const dividerMatch = chunk.match(/[;\n]/);
+      const semiIndex = dividerMatch ? dividerMatch.index : -1;
       const recordRaw = semiIndex === -1 ? chunk : chunk.slice(0, semiIndex);
       const trailing = semiIndex === -1 ? "" : chunk.slice(semiIndex + 1).trim();
 
@@ -68,6 +76,27 @@
     }
 
     return { segments, trailingDivider };
+  }
+
+  function uppercaseFirstWord(line) {
+    const markerMatch = line.match(/^(\s*\d+\s*[.)]\s*)(\S+)(.*)$/);
+    if (markerMatch) {
+      const [, prefix, word, rest] = markerMatch;
+      return `${prefix}${word.toUpperCase()}${rest}`;
+    }
+    const plainMatch = line.match(/^(\s*)(\S+)(.*)$/);
+    if (!plainMatch) {
+      return line;
+    }
+    const [, leading, word, rest] = plainMatch;
+    return `${leading}${word.toUpperCase()}${rest}`;
+  }
+
+  function normalizeSurnameCase(text) {
+    return text
+      .split("\n")
+      .map((line) => (line.trim() ? uppercaseFirstWord(line) : line))
+      .join("\n");
   }
 
   function stripOrdinal(chunk) {
@@ -86,7 +115,15 @@
     const left = commaIndex === -1 ? cleaned : cleaned.slice(0, commaIndex);
     const position = commaIndex === -1 ? "" : cleaned.slice(commaIndex + 1).trim();
     const tokens = left.trim().split(" ").filter(Boolean);
-    const surnameIndex = tokens.findIndex(isUpperCaseWord);
+    let surnameIndex = tokens.findIndex(isUpperCaseWord);
+    let caseIssue = false;
+
+    if (surnameIndex === -1 && tokens.length > 0) {
+      // Прізвище написане не в верхньому регістрі (наприклад, вставлено вручну без капіталізації) —
+      // вважаємо перше слово прізвищем, аби не втрачати запис і не показувати його як "відсутній".
+      surnameIndex = 0;
+      caseIssue = true;
+    }
 
     if (surnameIndex === -1) {
       return {
@@ -111,6 +148,7 @@
     return {
       index,
       valid: true,
+      caseIssue,
       rank,
       surname,
       surnameKey: surname.toUpperCase(),
@@ -683,12 +721,24 @@
 
     renderHistoryOptions(loadHistory());
 
-    document.getElementById("compareButton").addEventListener("click", handleCompareClick);
+    document.getElementById("compareButton").addEventListener("click", () => {
+      if (!document.getElementById("tabPanelFull").hidden) {
+        handleCompareClick();
+      }
+    });
     document.getElementById("saveHistoryButton").addEventListener("click", handleSaveHistoryClick);
     document.getElementById("copyCorrectedButton").addEventListener("click", handleCopyClick);
     document.getElementById("correctedOutput").addEventListener("input", updateCopyButtonState);
     document.getElementById("compareHistory").addEventListener("change", handleHistoryChange);
+
+    const textInputA = document.getElementById("textInputA");
+    textInputA.addEventListener("paste", () => {
+      setTimeout(() => {
+        textInputA.value = normalizeSurnameCase(textInputA.value);
+      }, 0);
+    });
   }
 
   global.initCompare = initCompare;
+  global.CompareCore = { parseList };
 })(window);
