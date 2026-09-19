@@ -92,10 +92,26 @@
     return `${leading}${word.toUpperCase()}${rest}`;
   }
 
+  function lineHasUppercaseSurname(line) {
+    const withoutMarker = line.replace(/^\s*\d+\s*[.)]\s*/, "");
+    const tokens = withoutMarker.split(" ").filter(Boolean);
+    return tokens.some(isUpperCaseWord);
+  }
+
   function normalizeSurnameCase(text) {
     return text
       .split("\n")
-      .map((line) => (line.trim() ? uppercaseFirstWord(line) : line))
+      .map((line) => {
+        if (!line.trim()) {
+          return line;
+        }
+        // Якщо прізвище вже написане великими літерами (напр. "Молодший сержант ПАСТУХ ..."),
+        // не чіпаємо перше слово — інакше замість прізвища в капс переводиться звання.
+        if (lineHasUppercaseSurname(line)) {
+          return line;
+        }
+        return uppercaseFirstWord(line);
+      })
       .join("\n");
   }
 
@@ -115,7 +131,15 @@
     const left = commaIndex === -1 ? cleaned : cleaned.slice(0, commaIndex);
     const position = commaIndex === -1 ? "" : cleaned.slice(commaIndex + 1).trim();
     const tokens = left.trim().split(" ").filter(Boolean);
-    let surnameIndex = tokens.findIndex(isUpperCaseWord);
+    // Прізвище шукаємо як ОСТАННЄ слово у верхньому регістрі, а не перше:
+    // звання іноді помилково набирають капсом (напр. "МОЛОДШИЙ сержант ПАСТУХ ..."),
+    // і в такому разі прізвище все одно йде безпосередньо перед іменем.
+    let surnameIndex = -1;
+    tokens.forEach((token, idx) => {
+      if (isUpperCaseWord(token)) {
+        surnameIndex = idx;
+      }
+    });
     let caseIssue = false;
 
     if (surnameIndex === -1 && tokens.length > 0) {
@@ -440,7 +464,7 @@
 
   function renderAddedRemovedItem(li, item) {
     const modifier = item.type === "added" ? "compare__result-item--added" : "compare__result-item--removed";
-    const tag = item.type === "added" ? "Лише в Тексті 2" : "Лише в Тексті 1";
+    const tag = item.type === "added" ? "Лише в БР Щоденна" : "Лише в Розподіл";
     li.className = `compare__result-item ${modifier}`;
     li.innerHTML = `
       <input type="checkbox" checked />
