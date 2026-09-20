@@ -105,7 +105,7 @@
     }
 
     const modifier = item.type === "added" ? "compare__result-item--added" : "compare__result-item--removed";
-    const tag = item.type === "added" ? "Немає в Тексті 1" : "Немає в Тексті 2";
+    const tag = item.type === "added" ? "Немає в Прізвища" : "Немає в БР Щоденна";
     li.className = `compare__result-item ${modifier}`;
     li.innerHTML = `
       <span class="compare__item-tag">${tag}:</span>
