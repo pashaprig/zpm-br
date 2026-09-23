@@ -195,7 +195,9 @@
         return;
       }
 
-      const normalized = seg.raw.replace(/\s+/g, " ").trim();
+      // Крапка замість ";" в кінці пункту — це не змістова розбіжність, а лише інший
+      // розділовий знак; прибираємо її так само, як і сам символ ";" вище.
+      const normalized = seg.raw.replace(/\s+/g, " ").trim().replace(/\.$/, "");
       if (!normalized) {
         return;
       }
