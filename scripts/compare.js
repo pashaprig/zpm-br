@@ -226,51 +226,83 @@
     return { map, order };
   }
 
-  function pairRecordsWithinSurname(listA, listB) {
-    const usedB = new Array(listB.length).fill(false);
-    const pairs = [];
+  // Допустима кількість механічних помилок (замінена, пропущена чи зайва літера),
+  // за якої два записи все ще вважаються однією особою.
+  const MAX_SURNAME_TYPOS = 1;
+  const MAX_NAME_TYPOS = 3;
 
-    function takeMatch(a, predicate) {
-      for (let j = 0; j < listB.length; j += 1) {
-        if (!usedB[j] && predicate(listB[j])) {
-          usedB[j] = true;
-          return listB[j];
+  function normalizeName(str) {
+    return String(str).toUpperCase().replace(/[’ʼ`]/g, "'");
+  }
+
+  function editDistance(a, b) {
+    const row = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i += 1) {
+      let diag = row[0];
+      row[0] = i;
+      for (let j = 1; j <= b.length; j += 1) {
+        const above = row[j];
+        row[j] = a[i - 1] === b[j - 1] ? diag : Math.min(diag, above, row[j - 1]) + 1;
+        diag = above;
+      }
+    }
+    return row[b.length];
+  }
+
+  // Повертає Map: запис з тексту 1 -> відповідна йому особа з тексту 2.
+  // 1) Спершу повний збіг ПІБ (без урахування регістру й виду апострофа).
+  // 2) Далі серед решти — пари з механічною помилкою: у прізвищі не більше
+  //    MAX_SURNAME_TYPOS, в імені та по батькові разом — не більше MAX_NAME_TYPOS.
+  //    Найсхожіші пари з'єднуються першими. Все інше — різні люди.
+  function pairRecords(allA, allB) {
+    const recordsA = allA.filter((rec) => rec.valid);
+    const recordsB = allB.filter((rec) => rec.valid);
+    const surnameOf = (rec) => normalizeName(rec.surname);
+    const nameOf = (rec) => normalizeName(`${rec.firstName} ${rec.patronymic}`);
+
+    const partnerOfA = new Map();
+    const usedB = new Set();
+
+    recordsA.forEach((a) => {
+      const b = recordsB.find(
+        (cand) => !usedB.has(cand) && surnameOf(cand) === surnameOf(a) && nameOf(cand) === nameOf(a)
+      );
+      if (b) {
+        partnerOfA.set(a, b);
+        usedB.add(b);
+      }
+    });
+
+    const candidates = [];
+    recordsA.forEach((a) => {
+      if (partnerOfA.has(a)) {
+        return;
+      }
+      recordsB.forEach((b) => {
+        if (usedB.has(b)) {
+          return;
         }
-      }
-      return null;
-    }
+        const surnameDist = editDistance(surnameOf(a), surnameOf(b));
+        if (surnameDist > MAX_SURNAME_TYPOS) {
+          return;
+        }
+        const nameDist = editDistance(nameOf(a), nameOf(b));
+        if (nameDist > MAX_NAME_TYPOS) {
+          return;
+        }
+        candidates.push({ a, b, score: surnameDist + nameDist });
+      });
+    });
 
-    const afterExact = [];
-    listA.forEach((a) => {
-      const b = takeMatch(a, (cand) => cand.firstName === a.firstName && cand.patronymic === a.patronymic);
-      if (b) {
-        pairs.push([a, b]);
-      } else {
-        afterExact.push(a);
+    candidates.sort((x, y) => x.score - y.score || x.a.index - y.a.index || x.b.index - y.b.index);
+    candidates.forEach(({ a, b }) => {
+      if (!partnerOfA.has(a) && !usedB.has(b)) {
+        partnerOfA.set(a, b);
+        usedB.add(b);
       }
     });
 
-    const afterFirstName = [];
-    afterExact.forEach((a) => {
-      const b = takeMatch(a, (cand) => cand.firstName === a.firstName);
-      if (b) {
-        pairs.push([a, b]);
-      } else {
-        afterFirstName.push(a);
-      }
-    });
-
-    const remainingB = listB.filter((_, j) => !usedB[j]);
-    const positionalCount = Math.min(afterFirstName.length, remainingB.length);
-    for (let i = 0; i < positionalCount; i += 1) {
-      pairs.push([afterFirstName[i], remainingB[i]]);
-    }
-
-    return {
-      pairs,
-      unmatchedA: afterFirstName.slice(positionalCount),
-      unmatchedB: remainingB.slice(positionalCount),
-    };
+    return { partnerOfA, usedB };
   }
 
   function buildComparison(textA, textB) {
@@ -280,6 +312,7 @@
 
     const groupA = groupBySurname(parsedA.records);
     const groupB = groupBySurname(parsedB.records);
+    const { partnerOfA, usedB } = pairRecords(parsedA.records, parsedB.records);
 
     const allKeys = [];
     const seen = new Set();
@@ -302,10 +335,14 @@
     allKeys.forEach((key) => {
       const listA = groupA.map.get(key) || [];
       const listB = groupB.map.get(key) || [];
-      const { pairs, unmatchedA, unmatchedB } = pairRecordsWithinSurname(listA, listB);
+      // Пара з помилкою в прізвищі показується в групі прізвища з тексту 1.
+      const pairs = listA.filter((a) => partnerOfA.has(a)).map((a) => [a, partnerOfA.get(a)]);
+      const unmatchedA = listA.filter((a) => !partnerOfA.has(a));
+      const unmatchedB = listB.filter((b) => !usedB.has(b));
 
       pairs.forEach(([a, b]) => {
         const same =
+          a.surnameKey === b.surnameKey &&
           a.rank === b.rank &&
           a.firstName === b.firstName &&
           a.patronymic === b.patronymic &&
