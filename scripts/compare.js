@@ -145,7 +145,9 @@
     if (surnameIndex === -1 && tokens.length > 0) {
       // Прізвище написане не в верхньому регістрі (наприклад, вставлено вручну без капіталізації) —
       // вважаємо перше слово прізвищем, аби не втрачати запис і не показувати його як "відсутній".
-      surnameIndex = 0;
+      // Виняток: звання на кшталт "сержант поліції" — тоді прізвище йде одразу після слова "поліції".
+      const policeIndex = tokens.findIndex((token) => token.toLowerCase() === "поліції");
+      surnameIndex = policeIndex !== -1 && policeIndex + 1 < tokens.length ? policeIndex + 1 : 0;
       caseIssue = true;
     }
 
