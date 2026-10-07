@@ -3,5 +3,6 @@
   initThemeToggle(themeToggle);
   initCompare();
   initCompareSurname();
+  initHandwriting();
   initTabs();
 })();

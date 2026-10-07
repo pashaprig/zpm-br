@@ -7,6 +7,8 @@
   <meta name="description" content="Порівняння двох текстів із виведенням розбіжностей." />
   <meta name="theme-color" content="#08131d" />
   <title>ZPM — Порівняння текстів</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/yomogi/index.css" />
+  <link rel="stylesheet" href="fonts/fonts.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -30,6 +32,8 @@
           aria-selected="true">Повне порівняння</button>
         <button class="compare__tab" type="button" id="tabButtonSurname" data-tab="surname" role="tab"
           aria-selected="false">По прізвищу</button>
+        <button class="compare__tab" type="button" id="tabButtonHandwriting" data-tab="handwriting" role="tab"
+          aria-selected="false">Рукописний текст</button>
       </div>
 
       <div class="compare__tab-panel" id="tabPanelFull" role="tabpanel">
@@ -78,6 +82,20 @@
         </div>
       </div>
 
+      <div class="compare__tab-panel" id="tabPanelHandwriting" role="tabpanel" hidden>
+        <div class="compare__font-switcher" id="fontSwitcher" role="group" aria-label="Рукописний шрифт"></div>
+        <div class="compare__sheet" id="handwritingSheet">
+          <p>Минулої суботи ми з бабусею поїхали на ринок по свіжі овочі. Зранку йшов дрібний дощ, тож я взяв
+            стару парасольку й гумові чоботи. Біля входу продавчиня з Житомирщини пропонувала яблука, мед і
+            ґрунтові помідори — кілограм коштував лише сорок гривень. Ми купили ще кропу, петрушки й трохи
+            молодої картоплі на вечерю.</p>
+          <p>Дорогою додому зустріли сусіда Євгена, який розповів, що в його саду цього року вперше вродили
+            абрикоси. Він пообіцяв принести відро наступного тижня, якщо не зіпсується погода. Увечері бабуся
+            зварила борщ, а я записав у зошит усі витрати, щоб не забути: 312 грн за овочі, 85 грн за мед і
+            ще 40 грн на проїзд. Їжа була смачна, і ми довго пили чай із м'ятою.</p>
+        </div>
+      </div>
+
       <div class="compare__wrapper" id="compareWrapper">
         <div class="compare__input-card" id="cardA">
           <label class="compare__field-label" for="textInputA" id="cardALabel">Розподіл</label>
@@ -89,7 +107,7 @@
         </div>
       </div>
 
-      <div class="compare__actions">
+      <div class="compare__actions" id="compareActions">
         <button class="compare__button" type="button" id="compareButton">Порівняти</button>
       </div>
     </div>
@@ -102,6 +120,7 @@
   <script src="scripts/theme.js"></script>
   <script src="scripts/compare.js"></script>
   <script src="scripts/compareSurname.js"></script>
+  <script src="scripts/handwriting.js"></script>
   <script src="scripts/tabs.js"></script>
   <script src="scripts/scripts.js"></script>
 </body>

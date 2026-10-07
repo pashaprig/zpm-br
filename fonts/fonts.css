@@ -1,0 +1,100 @@
+/* Злитні рукописні шрифти для табу «Рукописний текст».
+   Спершу локальний файл із цієї папки, якщо його немає — інтернет
+   (Bad Script, Caveat, Comforter Brush, Yomogi — Fontsource: jsDelivr / unpkg; Kobzar KS — bestfonts.pro).
+   Segoe Script, Segoe Print, Mistral, Ink Free — системні шрифти Windows. */
+
+/* ---------- Bad Script ---------- */
+@font-face {
+  font-family: "Bad Script";
+  font-weight: 400;
+  font-display: swap;
+  src: url("bad-script-cyrillic-400-normal.woff2") format("woff2"),
+    url("https://cdn.jsdelivr.net/npm/@fontsource/bad-script/files/bad-script-cyrillic-400-normal.woff2") format("woff2"),
+    url("https://unpkg.com/@fontsource/bad-script/files/bad-script-cyrillic-400-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: "Bad Script";
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/bad-script/files/bad-script-latin-400-normal.woff2") format("woff2"),
+    url("https://unpkg.com/@fontsource/bad-script/files/bad-script-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+/* ---------- Caveat, Comforter Brush, Yomogi (схожі на Mistral) ---------- */
+@font-face {
+  font-family: "Caveat";
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/caveat/files/caveat-cyrillic-400-normal.woff2") format("woff2"),
+    url("https://unpkg.com/@fontsource/caveat/files/caveat-cyrillic-400-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: "Caveat";
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/caveat/files/caveat-latin-400-normal.woff2") format("woff2"),
+    url("https://unpkg.com/@fontsource/caveat/files/caveat-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+@font-face {
+  font-family: "Comforter Brush";
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/comforter-brush/files/comforter-brush-cyrillic-400-normal.woff2") format("woff2"),
+    url("https://unpkg.com/@fontsource/comforter-brush/files/comforter-brush-cyrillic-400-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: "Comforter Brush";
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/npm/@fontsource/comforter-brush/files/comforter-brush-latin-400-normal.woff2") format("woff2"),
+    url("https://unpkg.com/@fontsource/comforter-brush/files/comforter-brush-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+/* Yomogi підключено в index.html готовим CSS Fontsource (файли розбиті на частини). */
+
+/* ---------- Kobzar KS (почерк Шевченка) ---------- */
+@font-face {
+  font-family: "Kobzar KS";
+  font-display: swap;
+  src: url("KobzarKS.woff2") format("woff2"),
+    url("https://bestfonts.pro/fonts_files/638666712439bfd33bd44549/files/KobzarKS.woff2") format("woff2"),
+    url("https://bestfonts.pro/fonts_files/638666712439bfd33bd44549/files/KobzarKS.woff") format("woff");
+}
+
+/* ---------- Системні шрифти Windows ---------- */
+@font-face {
+  font-family: "Hand Segoe Script";
+  src: local("Segoe Script"), local("SegoeScript");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Hand Segoe Script";
+  src: local("Segoe Script Bold"), local("SegoeScript-Bold");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Hand Mistral";
+  src: local("Mistral");
+}
+
+@font-face {
+  font-family: "Hand Ink Free";
+  src: local("Ink Free"), local("InkFree");
+}
+
+@font-face {
+  font-family: "Hand Segoe Print";
+  src: local("Segoe Print"), local("SegoePrint");
+}
