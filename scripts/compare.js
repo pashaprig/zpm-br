@@ -14,9 +14,12 @@
       .replace(/'/g, "&#39;");
   }
 
+  // Абревіатури, які пишуться великими літерами, але не є прізвищем.
+  const NOT_SURNAMES = new Set(["ГУНП"]);
+
   function isUpperCaseWord(token) {
     const cleaned = token.replace(/[^A-Za-zА-Яа-яЁёІіЇїЄєҐґ'’ʼ-]/g, "");
-    if (cleaned.length < 2) {
+    if (cleaned.length < 2 || NOT_SURNAMES.has(cleaned)) {
       return false;
     }
     return cleaned === cleaned.toUpperCase() && cleaned !== cleaned.toLowerCase();

@@ -489,23 +489,8 @@ body.app-expanded .compare {
   min-height: 44px;
 }
 
-.compare__font-switcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.compare__font-btn {
-  font-size: var(--font-size-lg);
-}
-
-.compare__font-btn:disabled {
-  opacity: 0.5;
-  font-size: var(--font-size-sm);
-}
-
 .compare__sheet {
-  --sheet-line: calc(var(--handwriting-size, 1.3rem) * 1.6);
+  --sheet-line: calc(1.3rem * 1.6);
   padding: var(--sheet-line) var(--space-5) var(--sheet-line) 4.5rem;
   border-radius: var(--radius-sm);
   background-color: var(--color-paper);
@@ -516,10 +501,7 @@ body.app-expanded .compare {
   background-position: 0 0, 0 -0.35em;
   box-shadow: 0 8px 20px var(--color-shadow);
   color: var(--color-ink);
-  font-family: var(--handwriting-font, cursive);
-  font-size: var(--handwriting-size, 1.3rem);
-  font-weight: var(--handwriting-weight, 400);
-  font-feature-settings: "calt" 1, "liga" 1;
+  font-size: 1.3rem;
   letter-spacing: 0;
   line-height: var(--sheet-line);
 }
