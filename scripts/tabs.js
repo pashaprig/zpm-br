@@ -5,11 +5,6 @@
   };
 
   function applyCardALabel(tabName) {
-    const isHandwriting = tabName === "handwriting";
-    document.getElementById("compareWrapper").hidden = isHandwriting;
-    document.getElementById("compareActions").hidden = isHandwriting;
-    if (isHandwriting) return;
-
     const config = CARD_A_LABELS[tabName];
     document.getElementById("cardALabel").textContent = config.label;
     document.getElementById("textInputA").placeholder = config.placeholder;
@@ -23,9 +18,7 @@
   function initTabs() {
     const tabs = [
       { name: "full", button: document.getElementById("tabButtonFull"), panel: document.getElementById("tabPanelFull") },
-      { name: "surname", button: document.getElementById("tabButtonSurname"), panel: document.getElementById("tabPanelSurname") },
-      { name: "handwriting", button: document.getElementById("tabButtonHandwriting"), panel: document.getElementById("tabPanelHandwriting") },
-    ];
+      { name: "surname", button: document.getElementById("tabButtonSurname"), panel: document.getElementById("tabPanelSurname") },    ];
 
     tabs.forEach(({ name, button }) => {
       button.addEventListener("click", () => {
